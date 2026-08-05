@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Haarnetzwerk · Vereinsverwaltung</title>
+  <style>
+    /* ── Tokens ── */
+    :root {
+      --gruen:       #2d6a4f;
+      --gruen-hell:  #52b788;
+      --gruen-blass: #d8f3dc;
+      --sand:        #f8f5f0;
+      --weiss:       #ffffff;
+      --text:        #1b1b1b;
+      --text-soft:   #555;
+      --border:      #ddd;
+      --rot:         #c0392b;
+      --radius:      10px;
+      --shadow:      0 2px 10px rgba(0,0,0,.08);
+      --font:        'Segoe UI', system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--sand);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--gruen);
+      color: var(--weiss);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: .5px; }
+    header span { font-size: .8rem; opacity: .75; }
+
+    /* ── Nav ── */
+    nav {
+      background: var(--weiss);
+      border-bottom: 2px solid var(--gruen-blass);
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    nav::-webkit-scrollbar { display: none; }
+    nav button {
+      border: none;
+      background: none;
+      padding: 14px 20px;
+      font-size: .9rem;
+      font-family: var(--font);
+      color: var(--text-soft);
+      cursor: pointer;
+      white-space: nowrap;
+      border-bottom: 3px solid transparent;
+      transition: all .2s;
+    }
+    nav button:hover { color: var(--gruen); }
+    nav button.aktiv {
+      color: var(--gruen);
+      font-weight: 700;
+      border-bottom-color: var(--gruen);
+    }
+
+    /* ── Hauptbereich ── */
+    main { padding: 24px 16px; max-width: 960px; margin: 0 auto; }
+
+    /* ── Sektionen ── */
+    .sektion { display: none; }
+    .sektion.aktiv { display: block; }
+
+    /* ── Karten ── */
+    .karte {
+      background: var(--weiss);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .karte-kopf {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .karte-kopf h2 { font-size: 1rem; color: var(--gruen); font-weight: 700; }
+
+    /* ── Buttons ── */
+    .btn {
+      border: none;
+      border-radius: 6px;
+      padding: 9px 18px;
+      font-size: .875rem;
+      font-family: var(--font);
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--gruen); color: var(--weiss); }
+    .btn-outline  { background: none; border: 2px solid var(--gruen); color: var(--gruen); }
+    .btn-klein    { padding: 5px 12px; font-size: .8rem; }
+    .btn-rot      { background: var(--rot); color: var(--weiss); }
+
+    /* ── Formular ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-gruppe { display: flex; flex-direction: column; gap: 4px; }
+    .form-gruppe.voll { grid-column: 1 / -1; }
+    label { font-size: .8rem; font-weight: 600; color: var(--text-soft); }
+    input, select, textarea {
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: .9rem;
+      font-family: var(--font);
+      transition: border-color .2s;
+      background: var(--weiss);
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--gruen-hell);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* ── Tabelle ── */
+    .tabelle-wrapper { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th {
+      background: var(--gruen-blass);
+      color: var(--gruen);
+      font-weight: 700;
+      text-align: left;
+      padding: 10px 12px;
+    }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f0faf4; }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 700;
+    }
+    .badge-gruen  { background: var(--gruen-blass); color: var(--gruen); }
+    .badge-grau   { background: #eee; color: #666; }
+    .badge-rot    { background: #fde; color: var(--rot); }
+    .badge-gelb   { background: #fef3cd; color: #856404; }
+
+    /* ── Modal ── */
+    .modal-bg {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-bg.offen { display: flex; }
+    .modal {
+      background: var(--weiss);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 40px rgba(0,0,0,.2);
+    }
+    .modal h3 { color: var(--gruen); margin-bottom: 20px; font-size: 1.05rem; }
+    .modal-aktionen {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    /* ── Dashboard ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-karte {
+      background: var(--weiss);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      text-align: center;
+      border-top: 4px solid var(--gruen);
+    }
+    .stat-karte .zahl { font-size: 2rem; font-weight: 800; color: var(--gruen); }
+    .stat-karte .label { font-size: .8rem; color: var(--text-soft); margin-top: 4px; }
+
+    /* ── Leer-Zustand ── */
+    .leer {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-soft);
+      font-size: .9rem;
+    }
+    .leer .icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+    /* ── Suche ── */
+    .such-leiste {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+    .such-leiste input { flex: 1; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--gruen);
+      color: var(--weiss);
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: .9rem;
+      z-index: 999;
+      transition: transform .3s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    }
+    #toast.sichtbar { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Haarnetzwerk</h1>
+  <span>Vereinsverwaltung</span>
+</header>
+
+<nav id="nav">
+  <button class="aktiv" onclick="zeige('dashboard', this)">🏠 Übersicht</button>
+  <button onclick="zeige('mitglieder', this)">👤 Mitglieder</button>
+  <button onclick="zeige('events', this)">📅 Events</button>
+  <button onclick="zeige('buchungen', this)">📋 Buchungen</button>
+  <button onclick="zeige('rechnungen', this)">🧾 Rechnungen</button>
+  <button onclick="zeige('kommunikation', this)">📧 Kommunikation</button>
+</nav>
+
+<main>
+
+  <!-- ══════════════════════════════════════════════════════
+       DASHBOARD
+  ══════════════════════════════════════════════════════ -->
+  <div id="dashboard" class="sektion aktiv">
+    <div class="stats-grid">
+      <div class="stat-karte">
+        <div class="zahl" id="stat-mitglieder">0</div>
+        <div class="label">Mitglieder aktiv</div>
+      </div>
+      <div class="stat-karte">
+        <div class="zahl" id="stat-events">0</div>
+        <div class="label">Events geplant</div>
+      </div>
+      <div class="stat-karte">
+        <div class="zahl" id="stat-buchungen">0</div>
+        <div class="label">Buchungen gesamt</div>
+      </div>
+      <div class="stat-karte">
+        <div class="zahl" id="stat-offen">0</div>
+        <div class="label">Rechnungen offen</div>
+      </div>
+    </div>
+
+    <div class="karte">
+      <div class="karte-kopf"><h2>Schnellaktionen</h2></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="zeige('mitglieder', document.querySelectorAll('nav button')[1]); oeffneModal('modal-mitglied')">+ Mitglied anlegen</button>
+        <button class="btn btn-outline" onclick="zeige('events', document.querySelectorAll('nav button')[2]); oeffneModal('modal-event')">+ Event anlegen</button>
+        <button class="btn btn-outline" onclick="zeige('rechnungen', document.querySelectorAll('nav button')[4]); oeffneModal('modal-rechnung')">+ Rechnung erstellen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       MITGLIEDER
+  ══════════════════════════════════════════════════════ -->
+  <div id="mitglieder" class="sektion">
+    <div class="karte">
+      <div class="karte-kopf">
+        <h2>Mitglieder</h2>
+        <button class="btn btn-primary" onclick="oeffneModal('modal-mitglied')">+ Neu</button>
+      </div>
+      <div class="such-leiste">
+        <input type="text" placeholder="Suche nach Name oder E-Mail …" oninput="sucheMitglieder(this.value)" />
+      </div>
+      <div class="tabelle-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Nr.</th><th>Name</th><th>E-Mail</th><th>Telefon</th>
+              <th>Beitritt</th><th>Status</th><th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="mitglieder-tabelle">
+            <tr><td colspan="7"><div class="leer"><div class="icon">👤</div>Noch keine Mitglieder eingetragen.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       EVENTS
+  ══════════════════════════════════════════════════════ -->
+  <div id="events" class="sektion">
+    <div class="karte">
+      <div class="karte-kopf">
+        <h2>Events &amp; Seminare</h2>
+        <button class="btn btn-primary" onclick="oeffneModal('modal-event')">+ Neu</button>
+      </div>
+      <div class="tabelle-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Datum</th><th>Ort</th>
+              <th>Kapazität</th><th>Preis</th><th>Status</th><th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="events-tabelle">
+            <tr><td colspan="7"><div class="leer"><div class="icon">📅</div>Noch keine Events angelegt.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       BUCHUNGEN
+  ══════════════════════════════════════════════════════ -->
+  <div id="buchungen" class="sektion">
+    <div class="karte">
+      <div class="karte-kopf">
+        <h2>Buchungen</h2>
+        <button class="btn btn-primary" onclick="oeffneModal('modal-buchung')">+ Neu</button>
+      </div>
+      <div class="tabelle-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Mitglied</th><th>Event</th><th>Datum</th>
+              <th>Status</th><th>Notizen</th><th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="buchungen-tabelle">
+            <tr><td colspan="6"><div class="leer"><div class="icon">📋</div>Noch keine Buchungen vorhanden.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       RECHNUNGEN
+  ══════════════════════════════════════════════════════ -->
+  <div id="rechnungen" class="sektion">
+    <div class="karte">
+      <div class="karte-kopf">
+        <h2>Rechnungen</h2>
+        <button class="btn btn-primary" onclick="oeffneModal('modal-rechnung')">+ Neu</button>
+      </div>
+      <div class="tabelle-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Nummer</th><th>Mitglied</th><th>Betrag</th>
+              <th>Fälligkeit</th><th>Status</th><th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="rechnungen-tabelle">
+            <tr><td colspan="6"><div class="leer"><div class="icon">🧾</div>Noch keine Rechnungen erstellt.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       KOMMUNIKATION
+  ══════════════════════════════════════════════════════ -->
+  <div id="kommunikation" class="sektion">
+    <div class="karte">
+      <div class="karte-kopf"><h2>Newsletter &amp; Rundmail</h2></div>
+      <div class="form-grid">
+        <div class="form-gruppe">
+          <label>Empfänger</label>
+          <select id="mail-filter">
+            <option value="alle">Alle aktiven Mitglieder</option>
+            <option value="vollmitglied">Nur Vollmitglieder</option>
+            <option value="foerder">Nur Fördermitglieder</option>
+          </select>
+        </div>
+        <div class="form-gruppe">
+          <label>Betreff</label>
+          <input type="text" id="mail-betreff" placeholder="Betreff der E-Mail" />
+        </div>
+        <div class="form-gruppe voll">
+          <label>Nachricht</label>
+          <textarea id="mail-inhalt" rows="6" placeholder="Deine Nachricht an die Mitglieder …"></textarea>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-primary" onclick="sendeNewsletter()">📧 Vorschau &amp; Senden</button>
+        <span id="mail-info" style="font-size:.85rem;color:var(--text-soft);"></span>
+      </div>
+    </div>
+
+    <div class="karte">
+      <div class="karte-kopf"><h2>Versandverlauf</h2></div>
+      <div class="tabelle-wrapper">
+        <table>
+          <thead>
+            <tr><th>Datum</th><th>Betreff</th><th>Empfänger</th><th>Filter</th></tr>
+          </thead>
+          <tbody id="kommunikation-tabelle">
+            <tr><td colspan="4"><div class="leer"><div class="icon">📧</div>Noch keine E-Mails versendet.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════ -->
+
+<!-- Mitglied -->
+<div class="modal-bg" id="modal-mitglied">
+  <div class="modal">
+    <h3>👤 Mitglied anlegen</h3>
+    <div class="form-grid">
+      <div class="form-gruppe">
+        <label>Anrede</label>
+        <select id="m-anrede">
+          <option>Frau</option><option>Herr</option><option>Divers</option>
+        </select>
+      </div>
+      <div class="form-gruppe">
+        <label>Beitragsart</label>
+        <select id="m-beitragsart">
+          <option value="vollmitglied">Vollmitglied</option>
+          <option value="foerder">Fördermitglied</option>
+          <option value="ehrenmitglied">Ehrenmitglied</option>
+        </select>
+      </div>
+      <div class="form-gruppe">
+        <label>Vorname *</label>
+        <input type="text" id="m-vorname" placeholder="Vorname" />
+      </div>
+      <div class="form-gruppe">
+        <label>Nachname *</label>
+        <input type="text" id="m-nachname" placeholder="Nachname" />
+      </div>
+      <div class="form-gruppe">
+        <label>E-Mail *</label>
+        <input type="email" id="m-email" placeholder="email@beispiel.at" />
+      </div>
+      <div class="form-gruppe">
+        <label>Telefon</label>
+        <input type="tel" id="m-telefon" placeholder="+43 …" />
+      </div>
+      <div class="form-gruppe voll">
+        <label>Adresse</label>
+        <input type="text" id="m-adresse" placeholder="Straße und Hausnummer" />
+      </div>
+      <div class="form-gruppe">
+        <label>PLZ</label>
+        <input type="text" id="m-plz" placeholder="1010" />
+      </div>
+      <div class="form-gruppe">
+        <label>Ort</label>
+        <input type="text" id="m-ort" placeholder="Wien" />
+      </div>
+      <div class="form-gruppe">
+        <label>Eintrittsdatum</label>
+        <input type="date" id="m-eintritt" />
+      </div>
+      <div class="form-gruppe">
+        <label>Status</label>
+        <select id="m-status">
+          <option value="aktiv">Aktiv</option>
+          <option value="pausiert">Pausiert</option>
+          <option value="ausgetreten">Ausgetreten</option>
+        </select>
+      </div>
+      <div class="form-gruppe voll">
+        <label>Notizen</label>
+        <textarea id="m-notizen" placeholder="Interne Notizen …"></textarea>
+      </div>
+    </div>
+    <div class="modal-aktionen">
+      <button class="btn btn-outline" onclick="schliesseModal('modal-mitglied')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="speichereMitglied()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Event -->
+<div class="modal-bg" id="modal-event">
+  <div class="modal">
+    <h3>📅 Event anlegen</h3>
+    <div class="form-grid">
+      <div class="form-gruppe voll">
+        <label>Eventname *</label>
+        <input type="text" id="e-name" placeholder="z.B. Schnittechnik Workshop" />
+      </div>
+      <div class="form-gruppe">
+        <label>Datum *</label>
+        <input type="date" id="e-datum" />
+      </div>
+      <div class="form-gruppe">
+        <label>Uhrzeit</label>
+        <input type="time" id="e-uhrzeit" />
+      </div>
+      <div class="form-gruppe">
+        <label>Ort</label>
+        <input type="text" id="e-ort" placeholder="Adresse oder Online" />
+      </div>
+      <div class="form-gruppe">
+        <label>Kapazität</label>
+        <input type="number" id="e-kapazitaet" placeholder="20" min="1" />
+      </div>
+      <div class="form-gruppe">
+        <label>Preis (€)</label>
+        <input type="number" id="e-preis" placeholder="0.00" step="0.01" />
+      </div>
+      <div class="form-gruppe">
+        <label>Status</label>
+        <select id="e-status">
+          <option value="geplant">Geplant</option>
+          <option value="aktiv">Aktiv</option>
+          <option value="abgesagt">Abgesagt</option>
+          <option value="abgeschlossen">Abgeschlossen</option>
+        </select>
+      </div>
+      <div class="form-gruppe voll">
+        <label>Beschreibung</label>
+        <textarea id="e-beschreibung" placeholder="Kurzbeschreibung des Events …"></textarea>
+      </div>
+    </div>
+    <div class="modal-aktionen">
+      <button class="btn btn-outline" onclick="schliesseModal('modal-event')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="speichereEvent()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Buchung -->
+<div class="modal-bg" id="modal-buchung">
+  <div class="modal">
+    <h3>📋 Buchung anlegen</h3>
+    <div class="form-grid">
+      <div class="form-gruppe voll">
+        <label>Mitglied *</label>
+        <select id="b-mitglied"></select>
+      </div>
+      <div class="form-gruppe voll">
+        <label>Event *</label>
+        <select id="b-event"></select>
+      </div>
+      <div class="form-gruppe">
+        <label>Status</label>
+        <select id="b-status">
+          <option value="gebucht">Gebucht</option>
+          <option value="warteliste">Warteliste</option>
+          <option value="storniert">Storniert</option>
+        </select>
+      </div>
+      <div class="form-gruppe voll">
+        <label>Notizen</label>
+        <textarea id="b-notizen" placeholder="Interne Notizen …"></textarea>
+      </div>
+    </div>
+    <div class="modal-aktionen">
+      <button class="btn btn-outline" onclick="schliesseModal('modal-buchung')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="speichereBuchung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rechnung -->
+<div class="modal-bg" id="modal-rechnung">
+  <div class="modal">
+    <h3>🧾 Rechnung erstellen</h3>
+    <div class="form-grid">
+      <div class="form-gruppe voll">
+        <label>Mitglied *</label>
+        <select id="r-mitglied"></select>
+      </div>
+      <div class="form-gruppe">
+        <label>Betrag (€) *</label>
+        <input type="number" id="r-betrag" placeholder="0.00" step="0.01" />
+      </div>
+      <div class="form-gruppe">
+        <label>MwSt. (%)</label>
+        <input type="number" id="r-mwst" value="20" />
+      </div>
+      <div class="form-gruppe">
+        <label>Fälligkeitsdatum</label>
+        <input type="date" id="r-faelligkeit" />
+      </div>
+      <div class="form-gruppe">
+        <label>Status</label>
+        <select id="r-status">
+          <option value="offen">Offen</option>
+          <option value="gesendet">Gesendet</option>
+          <option value="bezahlt">Bezahlt</option>
+          <option value="storniert">Storniert</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-aktionen">
+      <button class="btn btn-outline" onclick="schliesseModal('modal-rechnung')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="speichereRechnung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// DATENSPEICHER (localStorage — bleibt gespeichert im Browser)
+// ══════════════════════════════════════════════════════════
+var DB = {
+  mitglieder:    ladeDaten('hn_mitglieder', []),
+  events:        ladeDaten('hn_events', []),
+  buchungen:     ladeDaten('hn_buchungen', []),
+  rechnungen:    ladeDaten('hn_rechnungen', []),
+  kommunikation: ladeDaten('hn_kommunikation', [])
+};
+
+function ladeDaten(key, standard) {
+  try { return JSON.parse(localStorage.getItem(key)) || standard; }
+  catch(e) { return standard; }
+}
+
+function speichereDaten(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function naechsteNummer(prefix, liste, feld) {
+  var nummern = liste.map(function(x) {
+    return parseInt((x[feld] || '').replace(prefix + '-', '')) || 0;
+  });
+  var max = nummern.length ? Math.max.apply(null, nummern) : 0;
+  return prefix + '-' + String(max + 1).padStart(4, '0');
+}
+
+function faelligDatum() {
+  var d = new Date();
+  d.setDate(d.getDate() + 14);
+  return d.toISOString().split('T')[0];
+}
+
+// ══════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════
+function zeige(id, btn) {
+  document.querySelectorAll('.sektion').forEach(function(s) { s.classList.remove('aktiv'); });
+  document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('aktiv'); });
+  document.getElementById(id).classList.add('aktiv');
+  if (btn) btn.classList.add('aktiv');
+  aktualisiereAnsicht(id);
+}
+
+function aktualisiereAnsicht(id) {
+  if (id === 'dashboard')     aktualisiereDashboard();
+  if (id === 'mitglieder')    renderMitglieder(DB.mitglieder);
+  if (id === 'events')        renderEvents();
+  if (id === 'buchungen')     renderBuchungen();
+  if (id === 'rechnungen')    renderRechnungen();
+}
+
+// ══════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════
+function aktualisiereDashboard() {
+  document.getElementById('stat-mitglieder').textContent =
+    DB.mitglieder.filter(function(m) { return m.status === 'aktiv'; }).length;
+  document.getElementById('stat-events').textContent =
+    DB.events.filter(function(e) { return e.status === 'geplant' || e.status === 'aktiv'; }).length;
+  document.getElementById('stat-buchungen').textContent = DB.buchungen.length;
+  document.getElementById('stat-offen').textContent =
+    DB.rechnungen.filter(function(r) { return r.status === 'offen' || r.status === 'gesendet'; }).length;
+}
+
+// ══════════════════════════════════════════════════════════
+// MITGLIEDER
+// ══════════════════════════════════════════════════════════
+function speichereMitglied() {
+  var vorname = document.getElementById('m-vorname').value.trim();
+  var nachname = document.getElementById('m-nachname').value.trim();
+  var email = document.getElementById('m-email').value.trim();
+  if (!vorname || !nachname || !email) { zeigeToast('⚠️ Vorname, Nachname und E-Mail sind Pflicht.'); return; }
+
+  var mitglied = {
+    id: genId(),
+    mitgliedsnummer: naechsteNummer('MG', DB.mitglieder, 'mitgliedsnummer'),
+    anrede: document.getElementById('m-anrede').value,
+    vorname: vorname,
+    nachname: nachname,
+    email: email,
+    telefon: document.getElementById('m-telefon').value,
+    adresse: document.getElementById('m-adresse').value,
+    plz: document.getElementById('m-plz').value,
+    ort: document.getElementById('m-ort').value,
+    eintrittsdatum: document.getElementById('m-eintritt').value || new Date().toISOString().split('T')[0],
+    status: document.getElementById('m-status').value,
+    beitragsart: document.getElementById('m-beitragsart').value,
+    notizen: document.getElementById('m-notizen').value
+  };
+
+  DB.mitglieder.push(mitglied);
+  speichereDaten('hn_mitglieder', DB.mitglieder);
+  schliesseModal('modal-mitglied');
+  resetFormular(['m-vorname','m-nachname','m-email','m-telefon','m-adresse','m-plz','m-ort','m-notizen']);
+  renderMitglieder(DB.mitglieder);
+  zeigeToast('✅ Mitglied ' + mitglied.mitgliedsnummer + ' angelegt.');
+}
+
+function renderMitglieder(liste) {
+  var tbody = document.getElementById('mitglieder-tabelle');
+  if (!liste.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="leer"><div class="icon">👤</div>Noch keine Mitglieder eingetragen.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = liste.map(function(m) {
+    return '<tr>' +
+      '<td><strong>' + m.mitgliedsnummer + '</strong></td>' +
+      '<td>' + m.anrede + ' ' + m.vorname + ' ' + m.nachname + '</td>' +
+      '<td>' + m.email + '</td>' +
+      '<td>' + (m.telefon || '—') + '</td>' +
+      '<td>' + (m.eintrittsdatum || '—') + '</td>' +
+      '<td>' + badgeMitglied(m.status) + '</td>' +
+      '<td><button class="btn btn-outline btn-klein" onclick="loescheMitglied(\'' + m.id + '\')">🗑</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function sucheMitglieder(q) {
+  q = q.toLowerCase();
+  var gefiltert = DB.mitglieder.filter(function(m) {
+    return (m.vorname + ' ' + m.nachname + ' ' + m.email).toLowerCase().includes(q);
+  });
+  renderMitglieder(gefiltert);
+}
+
+function loescheMitglied(id) {
+  if (!confirm('Mitglied wirklich löschen?')) return;
+  DB.mitglieder = DB.mitglieder.filter(function(m) { return m.id !== id; });
+  speichereDaten('hn_mitglieder', DB.mitglieder);
+  renderMitglieder(DB.mitglieder);
+  zeigeToast('🗑 Mitglied gelöscht.');
+}
+
+function badgeMitglied(s) {
+  if (s === 'aktiv') return '<span class="badge badge-gruen">Aktiv</span>';
+  if (s === 'pausiert') return '<span class="badge badge-gelb">Pausiert</span>';
+  return '<span class="badge badge-grau">Ausgetreten</span>';
+}
+
+// ══════════════════════════════════════════════════════════
+// EVENTS
+// ══════════════════════════════════════════════════════════
+function speichereEvent() {
+  var name = document.getElementById('e-name').value.trim();
+  var datum = document.getElementById('e-datum').value;
+  if (!name || !datum) { zeigeToast('⚠️ Name und Datum sind Pflicht.'); return; }
+
+  var ev = {
+    id: genId(),
+    name: name,
+    datum: datum,
+    uhrzeit: document.getElementById('e-uhrzeit').value,
+    ort: document.getElementById('e-ort').value,
+    kapazitaet: document.getElementById('e-kapazitaet').value,
+    preis: document.getElementById('e-preis').value,
+    status: document.getElementById('e-status').value,
+    beschreibung: document.getElementById('e-beschreibung').value
+  };
+
+  DB.events.push(ev);
+  speichereDaten('hn_events', DB.events);
+  schliesseModal('modal-event');
+  resetFormular(['e-name','e-datum','e-uhrzeit','e-ort','e-kapazitaet','e-preis','e-beschreibung']);
+  renderEvents();
+  zeigeToast('✅ Event angelegt.');
+}
+
+function renderEvents() {
+  var tbody = document.getElementById('events-tabelle');
+  if (!DB.events.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="leer"><div class="icon">📅</div>Noch keine Events angelegt.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = DB.events.map(function(e) {
+    return '<tr>' +
+      '<td><strong>' + e.name + '</strong></td>' +
+      '<td>' + e.datum + (e.uhrzeit ? ' ' + e.uhrzeit : '') + '</td>' +
+      '<td>' + (e.ort || '—') + '</td>' +
+      '<td>' + (e.kapazitaet || '—') + '</td>' +
+      '<td>' + (e.preis ? e.preis + ' €' : 'kostenlos') + '</td>' +
+      '<td>' + badgeEvent(e.status) + '</td>' +
+      '<td><button class="btn btn-outline btn-klein" onclick="loescheEvent(\'' + e.id + '\')">🗑</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function loescheEvent(id) {
+  if (!confirm('Event wirklich löschen?')) return;
+  DB.events = DB.events.filter(function(e) { return e.id !== id; });
+  speichereDaten('hn_events', DB.events);
+  renderEvents();
+  zeigeToast('🗑 Event gelöscht.');
+}
+
+function badgeEvent(s) {
+  if (s === 'aktiv') return '<span class="badge badge-gruen">Aktiv</span>';
+  if (s === 'geplant') return '<span class="badge badge-gelb">Geplant</span>';
+  if (s === 'abgesagt') return '<span class="badge badge-rot">Abgesagt</span>';
+  return '<span class="badge badge-grau">Abgeschlossen</span>';
+}
+
+// ══════════════════════════════════════════════════════════
+// BUCHUNGEN
+// ══════════════════════════════════════════════════════════
+function speichereBuchung() {
+  var mitgliedId = document.getElementById('b-mitglied').value;
+  var eventId = document.getElementById('b-event').value;
+  if (!mitgliedId || !eventId) { zeigeToast('⚠️ Mitglied und Event auswählen.'); return; }
+
+  var buchung = {
+    id: genId(),
+    mitglied_id: mitgliedId,
+    event_id: eventId,
+    buchungsdatum: new Date().toISOString().split('T')[0],
+    status: document.getElementById('b-status').value,
+    notizen: document.getElementById('b-notizen').value
+  };
+
+  DB.buchungen.push(buchung);
+  speichereDaten('hn_buchungen', DB.buchungen);
+  schliesseModal('modal-buchung');
+  resetFormular(['b-notizen']);
+  renderBuchungen();
+  zeigeToast('✅ Buchung gespeichert.');
+}
+
+function renderBuchungen() {
+  var tbody = document.getElementById('buchungen-tabelle');
+  if (!DB.buchungen.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="leer"><div class="icon">📋</div>Noch keine Buchungen vorhanden.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = DB.buchungen.map(function(b) {
+    var m = DB.mitglieder.find(function(x) { return x.id === b.mitglied_id; });
+    var e = DB.events.find(function(x) { return x.id === b.event_id; });
+    return '<tr>' +
+      '<td>' + (m ? m.vorname + ' ' + m.nachname : '—') + '</td>' +
+      '<td>' + (e ? e.name : '—') + '</td>' +
+      '<td>' + b.buchungsdatum + '</td>' +
+      '<td>' + badgeBuchung(b.status) + '</td>' +
+      '<td>' + (b.notizen || '—') + '</td>' +
+      '<td><button class="btn btn-outline btn-klein" onclick="loescheBuchung(\'' + b.id + '\')">🗑</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function loescheBuchung(id) {
+  if (!confirm('Buchung wirklich löschen?')) return;
+  DB.buchungen = DB.buchungen.filter(function(b) { return b.id !== id; });
+  speichereDaten('hn_buchungen', DB.buchungen);
+  renderBuchungen();
+  zeigeToast('🗑 Buchung gelöscht.');
+}
+
+function badgeBuchung(s) {
+  if (s === 'gebucht') return '<span class="badge badge-gruen">Gebucht</span>';
+  if (s === 'warteliste') return '<span class="badge badge-gelb">Warteliste</span>';
+  return '<span class="badge badge-rot">Storniert</span>';
+}
+
+// ══════════════════════════════════════════════════════════
+// RECHNUNGEN
+// ══════════════════════════════════════════════════════════
+function speichereRechnung() {
+  var mitgliedId = document.getElementById('r-mitglied').value;
+  var betrag = document.getElementById('r-betrag').value;
+  if (!mitgliedId || !betrag) { zeigeToast('⚠️ Mitglied und Betrag sind Pflicht.'); return; }
+
+  var rechnung = {
+    id: genId(),
+    mitglied_id: mitgliedId,
+    rechnungsnummer: naechsteNummer('RG', DB.rechnungen, 'rechnungsnummer'),
+    betrag: parseFloat(betrag).toFixed(2),
+    mwst_satz: document.getElementById('r-mwst').value,
+    faelligkeitsdatum: document.getElementById('r-faelligkeit').value || faelligDatum(),
+    status: document.getElementById('r-status').value,
+    erstellt_am: new Date().toISOString().split('T')[0]
+  };
+
+  DB.rechnungen.push(rechnung);
+  speichereDaten('hn_rechnungen', DB.rechnungen);
+  schliesseModal('modal-rechnung');
+  resetFormular(['r-betrag','r-faelligkeit']);
+  renderRechnungen();
+  zeigeToast('✅ Rechnung ' + rechnung.rechnungsnummer + ' erstellt.');
+}
+
+function renderRechnungen() {
+  var tbody = document.getElementById('rechnungen-tabelle');
+  if (!DB.rechnungen.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="leer"><div class="icon">🧾</div>Noch keine Rechnungen erstellt.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = DB.rechnungen.map(function(r) {
+    var m = DB.mitglieder.find(function(x) { return x.id === r.mitglied_id; });
+    return '<tr>' +
+      '<td><strong>' + r.rechnungsnummer + '</strong></td>' +
+      '<td>' + (m ? m.vorname + ' ' + m.nachname : '—') + '</td>' +
+      '<td>' + r.betrag + ' €</td>' +
+      '<td>' + r.faelligkeitsdatum + '</td>' +
+      '<td>' + badgeRechnung(r.status) + '</td>' +
+      '<td>' +
+        '<button class="btn btn-outline btn-klein" onclick="markiereBezahlt(\'' + r.id + '\')">✓ Bezahlt</button> ' +
+        '<button class="btn btn-outline btn-klein" onclick="loescheRechnung(\'' + r.id + '\')">🗑</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function markiereBezahlt(id) {
+  var r = DB.rechnungen.find(function(x) { return x.id === id; });
+  if (r) { r.status = 'bezahlt'; speichereDaten('hn_rechnungen', DB.rechnungen); renderRechnungen(); zeigeToast('✅ Als bezahlt markiert.'); }
+}
+
+function loescheRechnung(id) {
+  if (!confirm('Rechnung wirklich löschen?')) return;
+  DB.rechnungen = DB.rechnungen.filter(function(r) { return r.id !== id; });
+  speichereDaten('hn_rechnungen', DB.rechnungen);
+  renderRechnungen();
+  zeigeToast('🗑 Rechnung gelöscht.');
+}
+
+function badgeRechnung(s) {
+  if (s === 'bezahlt') return '<span class="badge badge-gruen">Bezahlt</span>';
+  if (s === 'offen') return '<span class="badge badge-gelb">Offen</span>';
+  if (s === 'gesendet') return '<span class="badge badge-grau">Gesendet</span>';
+  return '<span class="badge badge-rot">Storniert</span>';
+}
+
+// ══════════════════════════════════════════════════════════
+// KOMMUNIKATION
+// ══════════════════════════════════════════════════════════
+function sendeNewsletter() {
+  var betreff = document.getElementById('mail-betreff').value.trim();
+  var inhalt = document.getElementById('mail-inhalt').value.trim();
+  var filter = document.getElementById('mail-filter').value;
+  if (!betreff || !inhalt) { zeigeToast('⚠️ Betreff und Nachricht ausfüllen.'); return; }
+
+  var empfaenger = DB.mitglieder.filter(function(m) {
+    if (m.status !== 'aktiv') return false;
+    if (filter === 'vollmitglied') return m.beitragsart === 'vollmitglied';
+    if (filter === 'foerder') return m.beitragsart === 'foerder';
+    return true;
+  });
+
+  var eintrag = {
+    id: genId(),
+    datum: new Date().toLocaleDateString('de-AT'),
+    betreff: betreff,
+    inhalt: inhalt,
+    empfaenger_anzahl: empfaenger.length,
+    filter: filter
+  };
+
+  DB.kommunikation.push(eintrag);
+  speichereDaten('hn_kommunikation', DB.kommunikation);
+  document.getElementById('mail-betreff').value = '';
+  document.getElementById('mail-inhalt').value = '';
+  renderKommunikation();
+  zeigeToast('📧 ' + empfaenger.length + ' Empfänger vorgemerkt — E-Mail-Versand über euer E-Mail-Programm.');
+  document.getElementById('mail-info').textContent = empfaenger.length + ' Empfänger (' + filter + ')';
+}
+
+function renderKommunikation() {
+  var tbody = document.getElementById('kommunikation-tabelle');
+  if (!DB.kommunikation.length) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="leer"><div class="icon">📧</div>Noch keine E-Mails versendet.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = DB.kommunikation.slice().reverse().map(function(k) {
+    return '<tr>' +
+      '<td>' + k.datum + '</td>' +
+      '<td>' + k.betreff + '</td>' +
+      '<td>' + k.empfaenger_anzahl + '</td>' +
+      '<td>' + k.filter + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// MODAL-HELFER
+// ══════════════════════════════════════════════════════════
+function oeffneModal(id) {
+  // Dropdowns befüllen
+  if (id === 'modal-buchung') {
+    befuelleSelect('b-mitglied', DB.mitglieder, function(m) {
+      return { val: m.id, text: m.mitgliedsnummer + ' – ' + m.vorname + ' ' + m.nachname };
+    });
+    befuelleSelect('b-event', DB.events, function(e) {
+      return { val: e.id, text: e.datum + ' – ' + e.name };
+    });
+  }
+  if (id === 'modal-rechnung') {
+    befuelleSelect('r-mitglied', DB.mitglieder, function(m) {
+      return { val: m.id, text: m.mitgliedsnummer + ' – ' + m.vorname + ' ' + m.nachname };
+    });
+    document.getElementById('r-faelligkeit').value = faelligDatum();
+  }
+  document.getElementById(id).classList.add('offen');
+}
+
+function schliesseModal(id) {
+  document.getElementById(id).classList.remove('offen');
+}
+
+function befuelleSelect(selectId, liste, mapper) {
+  var sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="">— bitte wählen —</option>';
+  liste.forEach(function(item) {
+    var mapped = mapper(item);
+    var opt = document.createElement('option');
+    opt.value = mapped.val;
+    opt.textContent = mapped.text;
+    sel.appendChild(opt);
+  });
+}
+
+// Modal schließen bei Klick außen
+document.querySelectorAll('.modal-bg').forEach(function(bg) {
+  bg.addEventListener('click', function(e) {
+    if (e.target === bg) bg.classList.remove('offen');
+  });
+});
+
+// ══════════════════════════════════════════════════════════
+// HILFSFUNKTIONEN
+// ══════════════════════════════════════════════════════════
+function resetFormular(ids) {
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+
+function zeigeToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('sichtbar');
+  setTimeout(function() { t.classList.remove('sichtbar'); }, 3000);
+}
+
+// ══════════════════════════════════════════════════════════
+// START
+// ══════════════════════════════════════════════════════════
+aktualisiereDashboard();
+</script>
+</body>
+</html>
